@@ -16,22 +16,20 @@ class TIFF_IO:
     def read_tiff(self) -> None:
 
         # Check the number of layers in the TIFF image
-        image_tiff = self.open_tiff()
-        self.num_frames = image_tiff.n_frames
+        with self.open_tiff() as image_tiff:
+            self.num_frames = image_tiff.n_frames
 
-        if self.num_frames < 2:
-            self.num_frames = 1
-            self.movie = np.asarray(image_tiff)
-        else:
-            layers = []
+            if self.num_frames < 2:
+                self.num_frames = 1
+                self.movie = np.asarray(image_tiff)
+            else:
+                time_bin = []
+                for frame in range(self.num_frames):
+                    image_tiff.seek(frame)
+                    time_bin.append(np.array(image_tiff))
 
-            # Iterate over each layer and append it to the list
-            for i in range(self.num_frames):
-                image_tiff.seek(i)
-                layers.append(np.array(image_tiff))
-
-            # Convert the list of layers to a NumPy array
-            self.movie = np.asarray(layers)
+                # Convert the list of layers to a NumPy array
+                self.movie = np.asarray(time_bin)
 
     def open_tiff(self) -> None:
         # Open the TIFF file in read mode
