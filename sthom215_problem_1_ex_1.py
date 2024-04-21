@@ -1,6 +1,7 @@
-from PIL import Image
+import tifffile
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 from numpy.typing import NDArray
 from celluloid import Camera
 
@@ -14,26 +15,14 @@ class TIFF_IO:
         self.movie = None
 
     def read_tiff(self) -> None:
-
-        # Check the number of layers in the TIFF image
-        with self.open_tiff() as image_tiff:
-            self.num_frames = image_tiff.n_frames
-
-            if self.num_frames < 2:
-                self.num_frames = 1
-                self.movie = np.asarray(image_tiff)
-            else:
-                time_bin = []
-                for frame in range(self.num_frames):
-                    image_tiff.seek(frame)
-                    time_bin.append(np.array(image_tiff))
-
-                # Convert the list of layers to a NumPy array
-                self.movie = np.asarray(time_bin)
+        self.open_tiff()
+        self.num_frames = self.movie.shape[0]
+        return self.movie
 
     def open_tiff(self) -> None:
         # Open the TIFF file in read mode
-        return Image.open(self.path)
+        max_workers = os.cpu_count() // 2
+        self.movie = tifffile.imread(self.path, maxworkers=max_workers)
 
 
 def save_gif(movie: NDArray, num_frames: int) -> None:
