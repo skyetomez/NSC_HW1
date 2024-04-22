@@ -4,6 +4,24 @@ import jax.numpy.linalg as la
 from numpy.typing import NDArray
 
 
+####### SOLUTION ########
+"""
+Added a solution function because my implementaiton, although works, is too slow and isn't scaling. 
+"""
+
+
+def get_hw5_3_solution(movie, num_components):
+    from sklearn.decomposition import FastICA
+    print("getting solution using FastICA. This may take awhile...")
+    fica = FastICA(n_components=4,
+                   whiten='unit-variance',
+                   fun='exp',  # More robust.
+                   max_iter=200,
+                   tol=1e-4,)
+    sol2 = fica.fit_transform(movie.reshape(movie.shape[0], -1).T)
+    return sol2.reshape(num_components, *movie.shape[1:])
+
+
 ########### Independent Component Analysis ############
 # https://en.wikipedia.org/wiki/FastICA
 
