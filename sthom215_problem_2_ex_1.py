@@ -17,7 +17,8 @@ class SummaryImages(TIFF_IO):
         """
         Normalize fluouresnce in the movie by dividing by the minimum value.
         """
-        self.movie = (self.movie - self.movie.min()) / self.movie.min()
+        norm_factor = (self.movie.max() - self.movie.min())
+        self.movie = (self.movie - self.movie.min()) / norm_factor
 
     def get_mean(self):
         """
@@ -50,7 +51,7 @@ class SummaryImages(TIFF_IO):
         """
 
         fns = [self.get_mean, self.get_median, self.get_variance]
-        imgs = [fn(self.movie) for fn in fns]
+        imgs = [fn() for fn in fns]
 
         fig, ax = plt.subplots(1, 3, figsize=(15, 5), layout='tight')
         for ii, img in enumerate(imgs):
