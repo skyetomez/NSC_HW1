@@ -8,6 +8,8 @@ from scipy.ndimage import sobel, binary_dilation, label
 from scipy import ndimage as ndi
 
 
+########### MY SOLUTION TO NUM 3 ####################
+
 def get_hw3_1_solution(movie, frame, kernel_dim, seed_pixel):
 
     selected_frame = movie[frame]
@@ -15,18 +17,34 @@ def get_hw3_1_solution(movie, frame, kernel_dim, seed_pixel):
     edge_y = sobel(selected_frame, axis=1, mode='constant')
     magnitude = np.hypot(edge_x, edge_y)
 
-    mean_val = np.mean(magnitude)
-    binary_edges = magnitude > mean_val
+    # Replace np.mean with a median_of_means function, assuming it's defined
+    mom_val = median_of_means(magnitude)
+    binary_edges = magnitude > mom_val
 
-    structuring_element = np.ones((kernel_dim, kernel_dim))
-    dilated_mask = binary_dilation(binary_edges, structure=structuring_element)
-
-    labeled_array, _ = label(dilated_mask)
+    # Initial labeling of all edges
+    labeled_array, _ = label(binary_edges)
     seed_label = labeled_array[seed_pixel[0], seed_pixel[1]]
+
+    # Create mask for the region of interest using the seed label
     roi_mask = labeled_array == seed_label
 
-    return roi_mask
+    # Apply dilation only to the selected ROI mask
+    structuring_element = np.ones((kernel_dim, kernel_dim))
+    dilated_mask = binary_dilation(roi_mask, structure=structuring_element)
 
+    return dilated_mask
+
+
+def median_of_means(movie, ss: int = 300):
+    means = []
+    for _ in range(7):
+        indexes = np.random.choice(movie.shape[0], ss)
+        mean = np.mean(movie[indexes])
+        means.append(mean)
+    return np.median(means, axis=0)
+
+
+########### MY SOLUTION ATTEMPT AT DOING FROM SCRATCH ####################
 
 ################### Constants ###################
 KERNELS = {"l_sobel": np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]),
@@ -100,3 +118,26 @@ class ROI_Extraction:
         for key in KERNELS.keys():
             print("the available kernels are:\n", flush=True)
             print("%s".format(key), flush=True)
+
+
+######################## DEPRECEATED  #####################
+
+# def get_hw3_1_solution(movie, frame, kernel_dim, seed_pixel):
+
+#     selected_frame = movie[frame]
+#     edge_x = sobel(selected_frame, axis=0, mode='constant')
+#     edge_y = sobel(selected_frame, axis=1, mode='constant')
+#     magnitude = np.hypot(edge_x, edge_y)
+
+#     # mean_val = np.mean(magnitude)
+#     mean_val = median_of_means(magnitude)
+#     binary_edges = magnitude > mean_val
+
+#     structuring_element = np.ones((kernel_dim, kernel_dim))
+#     dilated_mask = binary_dilation(binary_edges, structure=structuring_element)
+
+#     labeled_array, _ = label(dilated_mask)
+#     seed_label = labeled_array[seed_pixel[0], seed_pixel[1]]
+#     roi_mask = labeled_array == seed_label
+
+#     return roi_mask
