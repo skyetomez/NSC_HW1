@@ -1,4 +1,4 @@
-from sthom215_problem_3_exercise_1 import ROI_Extraction
+from sthom215_problem_3_ex_1 import ROI_Extraction
 import numpy as np
 from numpy.typing import NDArray
 
