@@ -15,7 +15,10 @@ class XCORR:
         fft_frame2 = np.fft.fft2(self.frame2)
         xcorr_freq = fft_frame1 * np.conj(fft_frame2)
         xcorr = np.fft.ifft2(xcorr_freq)
-        self.xcorr = np.abs(np.fft.fftshift(xcorr))
+        energy1 = np.sum(np.abs(self.frame1)**2)
+        energy2 = np.sum(np.abs(self.frame2)**2)
+        total_energy = np.sqrt(energy1 * energy2)
+        self.xcorr = np.abs(np.fft.fftshift(xcorr)) / total_energy
 
     def get_peak(self):
         return np.unravel_index(np.argmax(self.xcorr), self.xcorr.shape)

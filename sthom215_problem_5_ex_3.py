@@ -13,13 +13,10 @@ Added a solution function because my implementaiton, although works, is too slow
 def get_hw5_3_solution(movie, num_components):
     from sklearn.decomposition import FastICA
     print("getting solution using FastICA. This may take awhile...")
-    fica = FastICA(n_components=4,
-                   whiten='unit-variance',
-                   fun='exp',  # More robust.
-                   max_iter=200,
-                   tol=1e-4,)
-    sol2 = fica.fit_transform(movie.reshape(movie.shape[0], -1).T)
-    return sol2.reshape(num_components, *movie.shape[1:])
+    fica = FastICA(n_components=num_components)
+    tmp = movie.reshape(movie.shape[0], -1).T
+    sol2 = fica.fit_transform(tmp)
+    return sol2.reshape(*movie.shape[1:], num_components).T
 
 
 ########### Independent Component Analysis ############
@@ -69,10 +66,10 @@ class ICA:
         return w - jnp.sum(inner_product)
 
     def _whiten(self, X: NDArray) -> NDArray:
-        cov = jnp.cov(X)
+        cov = jnp.cov(X - jnp.mean(X, axis=1).reshape(-1, 1))
         D, E = la.eig(cov)
-        D_sqrt = jnp.diag(jnp.sqrt(D))
-        return jnp.dot(jnp.dot(D_sqrt, E.T), X)
+        D_sqrt = la.inv(jnp.diag(jnp.sqrt(D)))
+        return jnp.dot(jnp.dot(E, jnp.dot(D_sqrt, E.T)), (X-jnp.mean(X, axis=1).reshape(-1, 1)))
 
     def _f(self, X: NDArray) -> NDArray:
         # return jnp.log(jnp.cosh(X))

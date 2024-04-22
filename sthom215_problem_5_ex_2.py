@@ -26,7 +26,7 @@ def get_hw5_2_solution(movie, num_components):
               tol=1e-4,
               verbose=1)
     W = nmf.fit_transform(movie.reshape(movie.shape[0], -1).T)
-    return W.reshape(num_components, *movie.shape[1:])
+    return W.reshape(*movie.shape[1:], num_components).T
 
 
 class NMF:
