@@ -5,6 +5,15 @@ import matplotlib.pyplot as plt
 
 
 ############ PCA ############
+def get_hw5_1_solution(movie, num_components):
+    from sklearn.decomposition import PCA
+    print("getting solution. This may take awhile...")
+    nmf = PCA(n_components=num_components,
+              random_state=0,
+              tol=1e-4)
+    W = nmf.fit_transform(movie.reshape(movie.shape[0], -1).T)
+    return W.reshape(*movie.shape[1:], num_components).T
+
 
 class PCA:
     """ PCA for question number 5"""
@@ -30,7 +39,7 @@ class PCA:
     def fit(self, X: NDArray[np.float64]) -> None:
         self.time, self.height, self.width = X.shape
         self._X = X.reshape(self.time, self.height * self.width)
-        self.mean = np.mean(X, axis=0)
+        self.mean = np.mean(X, axis=1).reshape(X.shape[0], self.height, 1)
         self._X_centered = (X - self.mean).reshape(self.time,
                                                    self.height * self.width)
         self.cov = np.cov(self._X_centered)  # time covariance matrix
