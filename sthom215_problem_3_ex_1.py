@@ -1,25 +1,65 @@
 import numpy as np
 from numpy.typing import NDArray
-
+import plotly.express as px
 
 ################### ROI Extractor solution ###################
 import numpy as np
-from scipy.ndimage import sobel, binary_dilation, label
+from scipy.ndimage import gaussian_filter, median_filter, prewitt, label, binary_dilation
+
 from scipy import ndimage as ndi
+from skimage import feature
 
 
 ########### MY SOLUTION TO NUM 3 ####################
 
-def get_hw3_1_solution(movie, frame, kernel_dim, seed_pixel):
+ROI = {0: (418, 395),
+       30: (353, 47),
+       12: (113, 139),
+       257: (343, 259),
+       328: (194, 455)}
+
+
+def get_hw3_1_solution(movie):
+
+    print("The ROI masks are as follows: \n", flush=True)
+    for frame, seed in ROI.items():
+        print(f"Frame: {frame}, Seed: {seed}", flush=True)
+
+    kernel_dim = 3
+    for frame, seed in ROI.items():
+        roi_mask = get_roi(movie, frame, kernel_dim, seed)
+        fig = px.imshow(roi_mask, color_continuous_scale='gray')
+        fig.update_layout(coloraxis_showscale=False)
+        fig.update_layout(margin=dict(l=10, r=10, t=40, b=10),
+                          title_text=f'roi_mask_{frame}')
+        fig.show()
+
+
+def get_hw3_roi(movie):
+    kernel_size = 3
+    for frame, seed in ROI.items():
+        roi_mask = get_roi(movie, frame, kernel_size, seed)
+        np.save(f'roi_mask_{frame}.npy', roi_mask)
+
+
+def get_roi_2(frame, sigma, kernel_dim):
+    tmp2 = gaussian_filter(frame, 3)
+    tmp2 = median_filter(tmp2, 7)
+    tmp2 = np.where(tmp2 > np.quantile(tmp2.flatten(), .99), 1, 0)
+    return prewitt(tmp2)
+
+
+def get_roi(movie, frame, kernel_dim, seed_pixel, sigma=3):
 
     selected_frame = movie[frame]
-    edge_x = sobel(selected_frame, axis=0, mode='constant')
-    edge_y = sobel(selected_frame, axis=1, mode='constant')
-    magnitude = np.hypot(edge_x, edge_y)
 
-    # Replace np.mean with a median_of_means function, assuming it's defined
-    mom_val = median_of_means(magnitude)
-    binary_edges = magnitude > mom_val
+    edge = gaussian_filter(selected_frame, sigma=sigma)
+    edge = median_filter(edge, size=7)
+    thres = np.quantile(edge.flatten(), .99)
+    # mom_val = median_of_means(magnitude)
+
+    binary_edges = np.where(edge > thres, 1, 0)
+    binary_edges = prewitt(binary_edges)
 
     # Initial labeling of all edges
     labeled_array, _ = label(binary_edges)
@@ -29,10 +69,10 @@ def get_hw3_1_solution(movie, frame, kernel_dim, seed_pixel):
     roi_mask = labeled_array == seed_label
 
     # Apply dilation only to the selected ROI mask
-    structuring_element = np.ones((kernel_dim, kernel_dim))
-    dilated_mask = binary_dilation(roi_mask, structure=structuring_element)
+    # structuring_element = np.ones((kernel_dim, kernel_dim))
+    # dilated_mask = binary_dilation(roi_mask, structure=structuring_element)
 
-    return dilated_mask
+    return roi_mask
 
 
 def median_of_means(movie, ss: int = 300):
