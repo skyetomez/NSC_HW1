@@ -12,11 +12,24 @@ from scipy import ndimage as ndi
 
 ########### MY SOLUTION TO NUM 3 ####################
 
-ROI = {0: (418, 395),
-       30: (353, 47),
-       12: (113, 139),
-       257: (343, 259),
-       328: (194, 455)}
+ROI = {
+    0: (347, 50, 13, 13),
+    1: (113, 140, 11, 11),
+    2: (279, 295, 11, 13),
+    3: (290, 309, 24, 23),
+    4: (348, 323, 7, 6),
+    5: (370, 338, 13, 11),
+    6: (337, 349, 22, 44),
+    7: (288, 367, 33, 25),
+    8: (385, 375, 4, 4),
+    9: (405, 377, 19, 27),
+    10: (381, 413, 11, 18),
+    11: (294, 424, 8, 7),
+    12: (400, 434, 12, 10),
+    13: (257, 453, 7, 8),
+    14: (123, 464, 16, 11),
+    15: (166, 477, 13, 11)
+}
 
 
 def get_hw3_1_solution(movie):
@@ -53,22 +66,33 @@ def get_bounding_boxes(ROIs, plot: bool = False):
     # Check if the image is in grayscale, if not, convert it
     if len(ROIs.shape) > 2:
         # Assuming the image is RGBA or RGB, we convert it to grayscale
-        new_image = np.dot(ROIs[..., :3], [0.2989, 0.5870, 0.1140])
+        ROIs = np.dot(ROIs[..., :3], [0.2989, 0.5870, 0.1140])
 
-    # Since the image is already binary, we can directly label the regions
+    # Label the regions in the image
     labeled_image, num_features = ndi.label(ROIs)
 
-    # Create an array to hold the bounding box for each ROI
+    # Initialize list for storing bounding boxes
     rois_bounding_boxes = []
 
-    # Extract the slice for each labeled region (ROI)
+    # Find objects and extract bounding boxes
     slices = ndi.find_objects(labeled_image)
     for dy, dx in slices:
         # Get the bounds of the bounding box
         x_start, x_stop = dx.start, dx.stop
         y_start, y_stop = dy.start, dy.stop
-        rois_bounding_boxes.append(
-            (x_start, y_start, x_stop - x_start, y_stop - y_start))
+
+        # Adjust coordinates to ensure they stay within the image boundaries
+        x_start = max(x_start, 0)
+        y_start = max(y_start, 0)
+        x_stop = min(x_stop, ROIs.shape[1])
+        y_stop = min(y_stop, ROIs.shape[0])
+
+        # Calculate width and height
+        width = x_stop - x_start
+        height = y_stop - y_start
+
+        # Append adjusted bounding box
+        rois_bounding_boxes.append((x_start, y_start, width, height))
 
     if plot:
         # Visualize the bounding boxes on the original image
@@ -81,6 +105,8 @@ def get_bounding_boxes(ROIs, plot: bool = False):
             ax.add_patch(rect)
 
         plt.show()
+
+    return rois_bounding_boxes
 
 
 def get_roi(movie, frame, kernel_dim, seed_pixel, sigma=3):
