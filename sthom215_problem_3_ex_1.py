@@ -1,13 +1,13 @@
 import numpy as np
 from numpy.typing import NDArray
 import plotly.express as px
+import matplotlib.pyplot as plt
+
 
 ################### ROI Extractor solution ###################
 import numpy as np
-from scipy.ndimage import gaussian_filter, median_filter, prewitt, label, binary_dilation
-
+from scipy.ndimage import gaussian_filter, median_filter, prewitt, label
 from scipy import ndimage as ndi
-from skimage import feature
 
 
 ########### MY SOLUTION TO NUM 3 ####################
@@ -46,7 +46,41 @@ def get_roi_2(frame, sigma, kernel_dim):
     tmp2 = gaussian_filter(frame, 3)
     tmp2 = median_filter(tmp2, 7)
     tmp2 = np.where(tmp2 > np.quantile(tmp2.flatten(), .99), 1, 0)
-    return prewitt(tmp2)
+    return tmp2
+
+
+def get_bounding_boxes(ROIs, plot: bool = False):
+    # Check if the image is in grayscale, if not, convert it
+    if len(ROIs.shape) > 2:
+        # Assuming the image is RGBA or RGB, we convert it to grayscale
+        new_image = np.dot(ROIs[..., :3], [0.2989, 0.5870, 0.1140])
+
+    # Since the image is already binary, we can directly label the regions
+    labeled_image, num_features = ndi.label(ROIs)
+
+    # Create an array to hold the bounding box for each ROI
+    rois_bounding_boxes = []
+
+    # Extract the slice for each labeled region (ROI)
+    slices = ndi.find_objects(labeled_image)
+    for dy, dx in slices:
+        # Get the bounds of the bounding box
+        x_start, x_stop = dx.start, dx.stop
+        y_start, y_stop = dy.start, dy.stop
+        rois_bounding_boxes.append(
+            (x_start, y_start, x_stop - x_start, y_stop - y_start))
+
+    if plot:
+        # Visualize the bounding boxes on the original image
+        fig, ax = plt.subplots(figsize=(8, 8))
+        ax.imshow(ROIs, cmap='gray', interpolation='nearest')
+        for bbox in rois_bounding_boxes:
+            x, y, w, h = bbox
+            rect = plt.Rectangle((x, y), w, h, linewidth=1,
+                                 edgecolor='r', facecolor='none')
+            ax.add_patch(rect)
+
+        plt.show()
 
 
 def get_roi(movie, frame, kernel_dim, seed_pixel, sigma=3):
